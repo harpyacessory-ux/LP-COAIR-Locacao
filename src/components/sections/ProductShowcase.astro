@@ -1,0 +1,241 @@
+---
+/**
+ * Vitrine de produtos — fase "oferta" da biblioteca B2.
+ *
+ * Duas formas, resolvidas pelo conteúdo e não por entrada de briefing:
+ *
+ *   sem grupos  → uma grade de 2 colunas no mobile e 4 no desktop;
+ *   com grupos  → uma prateleira por grupo, com a logo (ou o nome) no cabeçalho,
+ *                 em trilho horizontal no mobile e grade no desktop.
+ *
+ * Visual COAIR: cards brancos com a foto sobre a sombra elíptica, ícone verde,
+ * nome e seta, num contêiner mais estreito que o padrão.
+ *
+ * As duas invariantes do conteúdo são verificadas aqui, no build, porque o
+ * `contract` do manifesto não expressa condição entre itens: descrição é tudo ou
+ * nada, e todo item de vitrine agrupada aponta para um grupo existente.
+ */
+import { Image } from 'astro:assets'
+import Section from '@components/Section.astro'
+import Icon from '@components/Icon.astro'
+import SectionHeader from '@components/SectionHeader.astro'
+import type { SectionProps } from '@lib/layout'
+import { showcase, type ShowcaseGroup, type ShowcaseItem } from '@data/sections/vitrine'
+
+type Props = SectionProps
+
+const { tone, rhythm } = Astro.props
+// Tipos largos de propósito: o `as const` dos dados deixa `groups: []` como `readonly []`
+// e os ids como literais, e as verificações abaixo virariam `never` na vitrine sem grupos.
+const { groups, items }: { groups: readonly ShowcaseGroup[]; items: readonly ShowcaseItem[] } =
+  showcase
+
+const described = items.filter((item) => item.description.trim()).length
+if (described !== 0 && described !== items.length) {
+  throw new Error(
+    `vitrine: descrição é tudo ou nada — ${described} de ${items.length} itens têm a frase. ` +
+      'Complete os que faltam ou apague todas: meia lista descrita lê como página inacabada.',
+  )
+}
+const showText = described === items.length
+
+const groupIds = new Set(groups.map((group) => group.id))
+for (const item of items) {
+  // Com grupos, item sem grupo não cai em prateleira nenhuma e sumiria da página em silêncio.
+  if ((groups.length || item.group) && !groupIds.has(item.group)) {
+    throw new Error(
+      item.group
+        ? `vitrine: o item "${item.id}" aponta para o grupo "${item.group}", que não existe em groups.`
+        : `vitrine: o item "${item.id}" está sem grupo — com groups preenchido, todo item aponta para um deles.`,
+    )
+  }
+}
+
+/** Com grupos, uma prateleira por grupo; sem grupos, uma só, em grade. */
+const railed = groups.length > 0
+const shelves = railed
+  ? groups.map((group) => ({
+      group,
+      items: items.filter((item) => item.group === group.id),
+    }))
+  : [{ group: null, items: [...items] }]
+
+for (const shelf of shelves) {
+  if (!shelf.items.length) {
+    throw new Error(
+      `vitrine: o grupo "${shelf.group?.id}" está sem itens. Remova o grupo ou aponte itens para ele.`,
+    )
+  }
+}
+---
+
+<Section
+  id="vitrine"
+  tone={tone}
+  rhythm={rhythm}
+  container={false}
+  class="relative isolate overflow-hidden"
+>
+  {/* Visual COAIR: cinza-claro com faixas diagonais suaves no lugar do tom da composição */}
+  <div aria-hidden="true" class="vitrine-bg pointer-events-none absolute inset-0 -z-10"></div>
+
+  {/* Mais estreito que o contêiner padrão, como no layout de referência */}
+  <div class="mx-auto max-w-[1152px] px-6 lg:px-10">
+    <SectionHeader
+      eyebrow={showcase.eyebrow}
+      title={showcase.title}
+      text={showcase.text}
+      width="2xl"
+      accent="green"
+      shape="dash"
+    />
+
+    <div class="mt-7 flex flex-col gap-10">
+      {shelves.map((shelf) => (
+        <div data-showcase-shelf>
+          {shelf.group && (
+            <div class="flex items-center gap-4 border-b border-neutral-gray-200/70 pb-3">
+              <h3 class="flex min-w-0 items-center">
+                {shelf.group.logo ? (
+                  <Image
+                    src={shelf.group.logo.src}
+                    alt={shelf.group.logo.alt}
+                    format="webp"
+                    width={220}
+                    loading="lazy"
+                    decoding="async"
+                    class="h-8 w-auto max-w-[120px] object-contain"
+                  />
+                ) : (
+                  <span class="font-display text-lg leading-snug font-extrabold text-ink">
+                    {shelf.group.label}
+                  </span>
+                )}
+              </h3>
+              <span class="ml-auto shrink-0 font-sans text-[12px] font-semibold tracking-[0.16em] text-ink-soft uppercase">
+                {shelf.items.length} itens
+              </span>
+            </div>
+          )}
+
+          <ul
+            data-showcase-rail
+            class:list={[
+              'gap-3.5',
+              shelf.group && 'mt-5',
+              railed
+                ? 'scroll-track -mx-6 flex snap-x snap-mandatory overflow-x-auto px-6 pb-3 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0'
+                : 'grid grid-cols-2 lg:grid-cols-4',
+            ]}
+          >
+            {shelf.items.map((item) => (
+              <li class:list={[railed && 'w-[78%] shrink-0 snap-start sm:w-[44%] lg:w-auto']}>
+                <button
+                  type="button"
+                  data-cta={`vitrine-${item.id}`}
+                  class="btn-slave-whats showcase-card group relative flex h-full w-full flex-col overflow-hidden rounded-[10px] bg-neutral-light text-left shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_-14px_rgba(16,24,40,0.2)] transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_40px_-20px_rgba(0,33,71,0.35)]"
+                >
+                  {/* A foto já traz o fundo branco e a sombra elíptica do card */}
+                  <span class="flex h-[100px] items-center justify-center overflow-hidden px-2 pt-1.5">
+                    <Image
+                      src={item.photo.src}
+                      alt={item.photo.alt}
+                      format="webp"
+                      loading="lazy"
+                      decoding="async"
+                      class="h-auto max-h-full w-auto max-w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+                    />
+                  </span>
+
+                  <span class="flex flex-1 items-center gap-2 px-3 pt-1.5 pb-3 sm:gap-2.5 sm:px-4">
+                    <Icon
+                      name={item.icon}
+                      class="size-[22px] shrink-0 text-brand-green-deep [stroke-width:2.1] sm:size-[26px]"
+                    />
+                    <span class="flex min-w-0 flex-1 flex-col gap-1">
+                      <span class="font-display text-[12.5px] leading-tight font-bold text-ink sm:text-[13px]">
+                        {item.title}
+                      </span>
+                      {showText && (
+                        <span class="font-sans text-[12px] leading-relaxed text-ink-soft">
+                          {item.description}
+                        </span>
+                      )}
+                    </span>
+                    <span class="hidden size-[34px] shrink-0 items-center justify-center rounded-full sm:flex bg-brand-green/12 text-brand-green-deep transition-[background-color,color,transform] duration-300 group-hover:translate-x-0.5 group-hover:bg-brand-green group-hover:text-neutral-light">
+                      <Icon name="arrow-right" class="size-4 [stroke-width:2.2]" />
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {railed && shelf.items.length > 1 && (
+            <div class="mt-3 flex items-center justify-center gap-3 lg:hidden">
+              <button
+                type="button"
+                data-rail-prev
+                aria-label={`Produto anterior de ${shelf.group?.label}`}
+                class="flex size-10 items-center justify-center rounded-full border border-neutral-gray-200 bg-neutral-light text-primary-dark transition-colors hover:border-brand-green hover:text-brand-green-deep"
+              >
+                <Icon name="chevron-right" class="size-4 rotate-180" />
+              </button>
+              <button
+                type="button"
+                data-rail-next
+                aria-label={`Próximo produto de ${shelf.group?.label}`}
+                class="flex size-10 items-center justify-center rounded-full border border-neutral-gray-200 bg-neutral-light text-primary-dark transition-colors hover:border-brand-green hover:text-brand-green-deep"
+              >
+                <Icon name="chevron-right" class="size-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+</Section>
+
+<style>
+  /* Cinza-claro da página com duas faixas de luz diagonais, bem suaves. */
+  .vitrine-bg {
+    background:
+      linear-gradient(118deg, transparent 58%, rgb(255 255 255 / 0.7) 63% 68%, transparent 73%),
+      linear-gradient(118deg, transparent 77%, rgb(255 255 255 / 0.55) 80% 83%, transparent 86%),
+      linear-gradient(118deg, rgb(255 255 255 / 0.6) 0 6%, transparent 12%),
+      var(--color-neutral-gray-100);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .showcase-card,
+    .showcase-card * {
+      transition: none !important;
+    }
+
+    .showcase-card:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  document.querySelectorAll<HTMLElement>('[data-showcase-shelf]').forEach((shelf) => {
+    const rail = shelf.querySelector<HTMLElement>('[data-showcase-rail]')
+    const prev = shelf.querySelector<HTMLButtonElement>('[data-rail-prev]')
+    const next = shelf.querySelector<HTMLButtonElement>('[data-rail-next]')
+    if (!rail || !prev || !next) return
+
+    const step = () => {
+      const card = rail.querySelector<HTMLElement>('li')
+      return card ? card.offsetWidth + 16 : rail.clientWidth * 0.8
+    }
+    const go = (dir: number) =>
+      rail.scrollBy({ left: dir * step(), behavior: reduce ? 'auto' : 'smooth' })
+
+    prev.addEventListener('click', () => go(-1))
+    next.addEventListener('click', () => go(1))
+  })
+</script>
