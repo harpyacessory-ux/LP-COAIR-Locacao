@@ -11,7 +11,7 @@ import type { IconName } from './icons'
 import type { Photo } from './types'
 import { site } from './site'
 
-import heroBg from '@assets/heroBg.png'
+import heroBg from '@assets/heroBg.jpg'
 
 /* ------------------------------------------------------------------ tipos */
 
@@ -56,7 +56,7 @@ export const hero = {
   ctaSecondary: 'Fale com um especialista',
   banner: {
     src: heroBg,
-    alt: 'Compressor de ar de parafuso COAIR em ambiente industrial',
+    alt: 'Compressores de ar de parafuso COAIR em ambiente industrial',
   },
   points: [
     { icon: 'tag', line1: 'Melhores preços', line2: 'em locação' },

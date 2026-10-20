@@ -1,8 +1,10 @@
 ---
 /**
  * ESTRUTURA FIXA (PROMPT-PADRAO-LP 4.1.2). Grid desktop: texto (1fr) · coluna VAZIA (270px) · shortcode (300px).
- * A coluna 2 é a janela do banner; nunca coloque conteúdo nela. O banner segue o brief 4.1.3.
- * Abra a página com `?grid=1` para ver as colunas e a zona do assunto sobre a imagem.
+ * A coluna 2 é a janela do banner; nunca coloque conteúdo nela.
+ * Nesta LP a foto vai do fim do texto até a borda da tela (sem véu à direita): os 3 compressores
+ * ocupam as colunas 2 e 3, e o chat do shortcode fica por cima da foto.
+ * Abra a página com `?grid=1` para ver as colunas e a caixa da foto.
  */
 import { Picture } from 'astro:assets'
 import Icon from './Icon.astro'
@@ -22,45 +24,28 @@ const hasHighlight = titleRest.length > 0
   class="relative overflow-hidden rounded-b-3xl border-b border-white/15 bg-primary-dark-900 lg:rounded-b-[40px]"
   data-hero
 >
-  {/* z1 — banner ancorado à borda direita do container (desktop) */}
+  {/* z1 — banner: do fim do texto até a borda direita da tela (desktop), com entrada suave */}
   <div class="hero-photo absolute inset-0 z-[1]">
     <Picture
       src={hero.banner.src}
       alt={hero.banner.alt}
-      widths={[640, 1024, 1536, 2135]}
-      sizes="(min-width: 1024px) 1700px, 100vw"
+      widths={[640, 1024, 1536, 1981]}
+      sizes="(min-width: 1024px) 62vw, 100vw"
       formats={['avif', 'webp']}
       fallbackFormat="webp"
       loading="eager"
       fetchpriority="high"
       decoding="async"
       class="h-full w-full object-cover object-[72%_center] lg:object-left"
-      pictureAttributes={{ class: 'block h-full w-full' }}
+      pictureAttributes={{
+        class:
+          'block h-full w-full lg:[mask-image:linear-gradient(to_right,transparent,black_100px)]',
+      }}
     />
   </div>
 
-  {/* z2 — véus navy: esquerdo (texto) e direito (shortcode) */}
+  {/* z2 — véu navy sob o texto (liso, como na referência aprovada) */}
   <div class="hero-navy pointer-events-none absolute inset-y-0 left-0 z-[2] w-full"></div>
-  <div class="hero-navy-right pointer-events-none absolute inset-y-0 right-0 z-[2] hidden lg:block"></div>
-
-  {/* z3 — malha de pontos */}
-  <div
-    class="hero-dots pointer-events-none absolute inset-y-0 left-0 z-[3] w-full opacity-[0.35] lg:[mask-image:linear-gradient(to_right,black_70%,transparent_100%)]"
-    style="background-image: radial-gradient(circle, rgb(255 255 255 / 0.5) 1px, transparent 1px); background-size: 28px 28px;"
-  ></div>
-
-  {/* z4 — mira técnica */}
-  <svg
-    class="pointer-events-none absolute top-6 left-6 z-[4] size-4 text-white/50"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.5"
-    aria-hidden="true"
-  >
-    <circle cx="12" cy="12" r="9"></circle>
-    <path d="M12 3v4M12 17v4M3 12h4M17 12h4"></path>
-  </svg>
 
   {/* z5 — conteúdo */}
   <div class="relative z-[5] mx-auto max-w-page px-6 py-20 lg:px-10 lg:py-24">
@@ -75,7 +60,8 @@ const hasHighlight = titleRest.length > 0
           {hasHighlight ? (
             <>
               {titleBefore}
-              <span class="text-brand-green">{hero.highlight}</span>
+              {/* Destaque sem quebra: "em operação" desce inteiro e não avança sobre o CA11 da foto */}
+              <span class="whitespace-nowrap text-brand-green">{hero.highlight}</span>
               {titleAfter}
             </>
           ) : (
@@ -83,7 +69,7 @@ const hasHighlight = titleRest.length > 0
           )}
         </h1>
 
-        <p class="mt-5 font-sans text-lg leading-snug font-medium text-neutral-light/80 lg:max-w-[34rem] lg:text-xl">
+        <p class="mt-5 font-sans text-lg leading-snug font-medium text-neutral-light/80 lg:max-w-[31rem] lg:leading-normal">
           {hero.text}
         </p>
 
@@ -158,14 +144,10 @@ const hasHighlight = titleRest.length > 0
 
   {/* Overlay de depuração: ?grid=1 */}
   <div data-hero-grid hidden class="pointer-events-none absolute inset-0 z-[9]">
-    <div class="hero-photo absolute inset-0">
-      <div class="absolute inset-y-0 left-[62%] w-[17%] border-x-2 border-dashed border-accent-orange bg-accent-orange/10">
-        <span class="absolute bottom-3 left-1/2 -translate-x-1/2 font-mono text-[11px] font-bold whitespace-nowrap text-accent-orange">
-          zona B · 62–79%
-        </span>
-      </div>
-      <div class="absolute inset-x-0 top-[17.5%] border-t border-dashed border-white/50"></div>
-      <div class="absolute inset-x-0 bottom-[17.5%] border-t border-dashed border-white/50"></div>
+    <div class="hero-photo absolute inset-0 border-l-2 border-dashed border-accent-orange bg-accent-orange/5">
+      <span class="absolute bottom-3 left-3 font-mono text-[11px] font-bold whitespace-nowrap text-accent-orange">
+        foto · fim do texto → borda da tela
+      </span>
     </div>
     <div class="mx-auto h-full max-w-page px-6 lg:px-10">
       <div class="hero-grid grid h-full lg:gap-x-6">
@@ -207,8 +189,6 @@ const hasHighlight = titleRest.length > 0
   /* Metade da largura da página (1320px / 2): ancora as colunas e a foto no mesmo eixo. */
   .hero-photo,
   .hero-navy,
-  .hero-navy-right,
-  .hero-dots,
   .hero-grid {
     --page-half: calc(var(--container-page) / 2);
     --page-edge: max(0px, calc(50% - var(--page-half)));
@@ -231,40 +211,30 @@ const hasHighlight = titleRest.length > 0
       grid-template-columns: minmax(0, 1fr) 270px 300px;
     }
 
-    /* A foto termina na borda direita da página; com 1700px o assunto (62–79% da foto) cai na coluna 2. */
-    .hero-photo {
-      left: auto;
-      right: var(--page-edge);
-      width: 1700px;
+    /* Fim do bloco de texto: borda da página + padding + coluna 1, limitada a 31rem (largura do subtítulo). */
+    /* 698px = padding (2 × 40) + coluna 2 (270) + coluna 3 (300) + gaps (2 × 24). */
+    .hero-photo,
+    .hero-navy {
+      --text-end: calc(var(--page-edge) + 2.5rem + min(31rem, 100% - 2 * var(--page-edge) - 698px));
     }
 
-    /* Navy sólido sob a coluna 1, dissolvendo antes da janela. */
+    /* A foto começa 80px antes do fim do texto (a máscara do <picture> faz a entrada) e vai até a borda da tela. */
+    /* Com a foto em 1,46:1, o CA11 encosta no fim do texto e o HD55 termina perto da borda. */
+    .hero-photo {
+      left: calc(var(--text-end) - 80px);
+    }
+
+    /* Navy sólido sob o texto, dissolvendo até o fim dele (o CA11 fica fora do véu). */
     .hero-navy {
-      width: calc(50% - 20px);
+      width: calc(var(--text-end) + 10px);
       background:
-        radial-gradient(900px 520px at 10% -10%, rgb(255 255 255 / 0.1) 0%, transparent 55%),
+        radial-gradient(900px 520px at 10% -10%, rgb(255 255 255 / 0.08) 0%, transparent 55%),
         linear-gradient(
           to left,
           transparent 0px,
-          rgb(0 24 48 / 0.45) 70px,
-          var(--color-primary-dark-800) 150px,
-          var(--color-primary-dark) 100%
+          rgb(0 33 71 / 0.7) 60px,
+          var(--color-primary-dark) 130px
         );
-    }
-
-    /* Navy da direita: cobre a coluna do shortcode e fecha a margem da página. */
-    .hero-navy-right {
-      width: calc(50% - 261px);
-      background: linear-gradient(
-        to right,
-        transparent 0px,
-        rgb(0 24 48 / 0.55) 200px,
-        var(--color-primary-dark-900) 364px
-      );
-    }
-
-    .hero-dots {
-      width: calc(50% - 60px);
     }
   }
 </style>

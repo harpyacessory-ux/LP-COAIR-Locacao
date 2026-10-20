@@ -179,8 +179,9 @@ for (const f of astroFiles) {
     'Header.astro': ['sticky top-0 z-50', '-mt-3 -mb-10', 'rounded-b-xl', 'data-cta="header-cta"'],
     'Hero.astro': [
       'grid-template-columns: minmax(0, 1fr) 270px 300px',
-      'right: var(--page-edge)',
-      'width: 1700px',
+      // Nesta LP a foto vai do fim do texto até a borda da tela (no padrão: right: var(--page-edge) + width: 1700px)
+      '--text-end: calc(var(--page-edge)',
+      'left: calc(var(--text-end) - 80px)',
       'lg:w-[300px]',
       'data-hero-grid',
       'fetchpriority="high"',
@@ -477,7 +478,8 @@ async function checkAssetSpecs(manifest) {
 /** Especificação das imagens da estrutura fixa, que não pertencem a nenhuma seção. */
 const FIXED_ASSET_SPECS = [
   { dir: '.', match: 'LOGO', width: 240, height: 200, alpha: true },
-  { dir: '.', match: 'heroBg', width: 1981, height: 900, alpha: false },
+  // Nesta LP a foto do hero vai do fim do texto até a borda da tela (ver Hero.astro): proporção ~1,46:1
+  { dir: '.', match: 'heroBg', width: 1981, height: 1360, alpha: false },
   { dir: 'brands', width: 400, height: 160, alpha: null },
 ]
 
